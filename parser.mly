@@ -1,9 +1,11 @@
 %{ open Ast %}
 
-%token SEMI LPAREN RPAREN LBRACE RBRACE COMMA
+%token SEMI LBRACK RBRACK LBRACE RBRACE COMMA LPAREN RPAREN
 %token PLUS MINUS TIMES DIVIDE ASSIGN
 %token EQ NEQ LT LEQ GT GEQ
-%token RETURN IF ELSE FOR WHILE INT
+%token RETURN IF ELSE FOR WHILE INT LOOP
+%token COMP BPM MEASURELEN
+%token <note> NOTE
 %token <int> LITERAL
 %token <string> ID
 %token EOF
@@ -15,56 +17,44 @@
 %left LT GT LEQ GEQ
 %left PLUS MINUS
 %left TIMES DIVIDE
+%left BPM MEASURELEN
 
-%start program
-%type <Ast.program> program
+%start comp
+%type <Ast.comp> comp
 
 %%
 
-program:
-   /* nothing */ { [], [] }
- | program vdecl { ($2 :: fst $1), snd $1 }
- | program fdecl { fst $1, ($2 :: snd $1) }
+comp:
+      COMP LBRACE stmt_list RBRACE { Comp($3) }
 
-fdecl:
-   ID LPAREN formals_opt RPAREN LBRACE vdecl_list stmt_list RBRACE
-     { { fname = $1;
-	 formals = $3;
-	 locals = List.rev $6;
-	 body = List.rev $7 } }
+mdecl:
+    ID LBRACK note_list RBRACK
+        { { id = $1;
+                body = List.rev $3; } }
+     | LBRACK note_list RBRACK
+        {{body = List.rev $2; }}
 
-formals_opt:
-    /* nothing */ { [] }
-  | formal_list   { List.rev $1 }
-
-formal_list:
-    ID                   { [$1] }
-  | formal_list COMMA ID { $3 :: $1 }
-
-vdecl_list:
-    /* nothing */    { [] }
-  | vdecl_list vdecl { $2 :: $1 }
-
-vdecl:
-   INT ID SEMI { $2 }
+note_list:
+        NOTE    {[$1]}
+      | chord {[$1]}
+      | note_list COMMA NOTE { $3 :: $1 }
+      | note_list COMMA chord {$3 :: $1 }
+        
+chord:
+        NOTE PLUS NOTE { [$1] }
+      | chord PLUS NOTE { $3 :: $1 }
 
 stmt_list:
     /* nothing */  { [] }
   | stmt_list stmt { $2 :: $1 }
 
 stmt:
-    expr SEMI { Expr($1) }
-  | RETURN expr SEMI { Return($2) }
-  | LBRACE stmt_list RBRACE { Block(List.rev $2) }
   | IF LPAREN expr RPAREN stmt %prec NOELSE { If($3, $5, Block([])) }
   | IF LPAREN expr RPAREN stmt ELSE stmt    { If($3, $5, $7) }
-  | FOR LPAREN expr_opt SEMI expr_opt SEMI expr_opt RPAREN stmt
-     { For($3, $5, $7, $9) }
-  | WHILE LPAREN expr RPAREN stmt { While($3, $5) }
-
-expr_opt:
-    /* nothing */ { Noexpr }
-  | expr          { $1 }
+  | LOOP LITERAL LBRACE expr RBRACE { Loop($2, $4) }
+  | mdecl                       { Measure($1) }
+  | MEASURELEN ASSIGN LITERAL {MeasureLen($3)}
+  | BPM ASSIGN LITERAL { Bpm($3) }
 
 expr:
     LITERAL          { Literal($1) }
@@ -80,13 +70,5 @@ expr:
   | expr GT     expr { Binop($1, Greater,  $3) }
   | expr GEQ    expr { Binop($1, Geq,   $3) }
   | ID ASSIGN expr   { Assign($1, $3) }
-  | ID LPAREN actuals_opt RPAREN { Call($1, $3) }
-  | LPAREN expr RPAREN { $2 }
 
-actuals_opt:
-    /* nothing */ { [] }
-  | actuals_list  { List.rev $1 }
 
-actuals_list:
-    expr                    { [$1] }
-  | actuals_list COMMA expr { $3 :: $1 }
