@@ -1,8 +1,26 @@
 open Ast
-open Bytecode
+open Printf
 
 module StringMap = Map.Make(String)
 
+let writeOutput k  = let oc = open_out_gen [Open_creat; Open_append; Open_text] 0o666 "out.bach" in 
+printf "start print" ;fprintf oc "\nsomething: %s\n" (string_of_stmt k) ; close_out oc
+
+let compile stmts = 
+        Printf.printf "here too\n";        
+        let rec eval env = function
+                Chord(c) -> Chord(c), env
+                | a -> a , env
+        in
+        let rec exec env = function
+                Measure(m) -> Measure(m), env
+                | a -> a , env
+                (*| Expr(e) -> let _, env = eval env e in env*)
+        in
+        Printf.printf "len:%i"  (List.length stmts);
+        List.iter writeOutput stmts
+        (*List.iter writeOutput (List.map exec stmts)*) 
+(*
 (* Symbol table: Information about all the names in scope *)
 type env = {
     function_index : int StringMap.t; (* Index for each function *)
@@ -102,3 +120,4 @@ let translate (globals, functions) =
 	Jsr i when i > 0 -> Jsr func_offset.(i)
       | _ as s -> s) (List.concat func_bodies))
   }
+*)
