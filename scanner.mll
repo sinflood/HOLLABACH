@@ -31,9 +31,9 @@ rule token = parse
 | "return" { RETURN }
 | "int"    { INT }
 
-(*| ['A'-'G' 'R']['#' 'b']?['1'-'4']['\\'](['1' '2' '3' '4' '8' ] | "16") as lxm {
-        NOTE(lxm) }*)
-| ['A'-'G']['1'-'4'] as lxm {NOTE(lxm)}
+| ['A'-'G' 'R']['#' 'b']?['1'-'4']['/'](['1' '2' '3' '4' '8' ] | "16") as lxm {
+        NOTE(lxm) }
+(*| ['A'-'G']['1'-'4']['\\'] as lxm {NOTE(lxm)}*)
 
 | ['0'-'9']+ as lxm { LITERAL(int_of_string lxm) }
 | ['a'-'z' 'A'-'Z']['a'-'z' 'A'-'Z' '0'-'9' '_']* as lxm { ID(lxm) }

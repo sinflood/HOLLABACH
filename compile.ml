@@ -2,23 +2,65 @@ open Ast
 open Printf
 
 module StringMap = Map.Make(String)
+let header  = "Timing Resolution (pulses per quarter note)\n4\n\nInstrument,105,Banjo\n\nTick,Note (0-127),Velocity (0-127)\n"
 
 let writeOutput k  = let oc = open_out_gen [Open_creat; Open_append; Open_text] 0o666 "out.bach" in 
-printf "start print" ;fprintf oc "\nsomething: %s\n" (string_of_stmt k) ; close_out oc
+let getVel notestr =
+        match notestr.[3] with
+        '1' -> 4
+        | '2' ->2 
+        | _ -> 1
+in
+let getNote noter =  
+        match noter.[0] with
+        'A' -> 1
+        | 'B' -> 2
+        | _ -> 3      
+in
+let getNoteString no offset = 
+         match no with
+         Note(n) -> string_of_int offset ^ "," ^ string_of_int (getNote n) ^ "," ^ string_of_int (getVel n)
+        | _ ->  ""
+in
+let printNote naw offset=
+        fprintf oc "%s\n" (getNoteString naw offset)
+in
+let printMeasure off n =
+        match n with
+        Measure(m) -> List.iter (fun naw ->
+                fprintf oc "%s\n" (getNoteString naw off) 
+        )  m.body; off + 4
+        | _ -> printf "ERROR, NOT A MEASURE!"; off
+in
+printf "start print" ;
+fprintf oc "%s" header;
+List.fold_left printMeasure 0 k ; 
+close_out oc
 
 let compile stmts = 
         Printf.printf "here too\n";        
-        let rec eval env = function
+        let rec eval env = match env with
+                
                 Chord(c) -> Chord(c), env
+               (* | Note(n) -> Note(n), env*)
                 | a -> a , env
         in
-        let rec exec env = function
-                Measure(m) -> Measure(m), env
-                | a -> a , env
+        let rec exec env = match env with
+                Measure(m) -> (Measure(m), env)
+                | a -> (a , env)
                 (*| Expr(e) -> let _, env = eval env e in env*)
         in
-        Printf.printf "len:%i"  (List.length stmts);
-        List.iter writeOutput stmts
+        (*let run s = 
+                List.map fst (List.fold_left (fun l x -> (exec x) :: l ) [] s)
+        in 
+        let res y = 
+                List.map fst y 
+        in
+        let k = run (List.rev stmts)
+        in
+        let v = res  (run (List.rev stmts))
+        in*)
+        writeOutput stmts
         (*List.iter writeOutput (List.map exec stmts)*) 
 (*
 (* Symbol table: Information about all the names in scope *)
