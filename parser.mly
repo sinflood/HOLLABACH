@@ -35,14 +35,18 @@ mdecl:
      | error             { printf "error here3!"; {id = "noine"; body=[]} } 
 
 note_list:
-        NOTE    { printf "here6"; [ Note($1)] }
-      | note_list COMMA NOTE { printf "hereNEW";Note($3) :: $1 }
+      /*  NOTE    { printf "here6"; [ Note($1)] }
+      | note_list COMMA NOTE { printf "hereNEW";Note($3) :: $1 } */
+      chord { [Chord($1)]}
+      | note_list COMMA chord { Chord($3) :: $1 } 
      | error             { printf "error here!5"; [] } 
-        
-/*chord:
-        NOTE PLUS NOTE { Chord( Note($3) :: Note($1) ) }
-      | chord PLUS NOTE { Chord(Note($3) :: $1) }
-*/
+note_plus:
+        NOTE { [Note($1)] }
+      /*|  NOTE PLUS NOTE { Note($3) :: [Note($1)]  }*/
+      | note_plus PLUS NOTE { Note($3) :: $1 }
+chord:
+        note_plus { $1 }   
+
 stmt_list:
     /* nothing */  { [] }
   | stmt_list stmt { printf "here3"; $2 :: $1 }
@@ -52,7 +56,7 @@ stmt:
   | IF LPAREN expr RPAREN stmt %prec NOELSE { If($3, $5, Block([])) }
   | IF LPAREN expr RPAREN stmt ELSE stmt    { If($3, $5, $7) }
   | LOOP LITERAL LBRACE stmt RBRACE { Loop(Literal($2), $4) }
-  | mdecl                       { printf "here4"; Measure($1) }
+  | mdecl                       {  Measure($1) }
   | MEASURELEN ASSIGN LITERAL {MeasureLen($3)}
   | BPM ASSIGN LITERAL { Bpm($3) }
   | ID     { Id($1) }

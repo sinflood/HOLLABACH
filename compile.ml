@@ -4,22 +4,40 @@ open Printf
 module StringMap = Map.Make(String)
 let header  = "Timing Resolution (pulses per quarter note)\n4\n\nInstrument,105,Banjo\n\nTick,Note (0-127),Velocity (0-127)\n"
 
-let writeOutput k  = let oc = open_out_gen [Open_creat; Open_append; Open_text] 0o666 "out.bach" in 
+let writeOutput bpm measLen k  = let oc = open_out_gen [Open_creat; Open_append; Open_text] 0o666 "out.bach" in 
 let getVel notestr =
-        match notestr.[3] with
+        match notestr.[ (String.length notestr) -1] with
         '1' -> 4
         | '2' ->2 
         | _ -> 1
 in
+let getMod noter = 
+        match noter.[1] with
+        'b' -> -1
+        | '#' -> 1
+        | _ -> 0
+in
+let getOctave noter =
+        if getMod noter != 0 then
+                (int_of_char noter.[2] -48)* 12
+        else
+                (int_of_char noter.[1] -48)* 12
+in
 let getNote noter =  
         match noter.[0] with
-        'A' -> 1
-        | 'B' -> 2
-        | _ -> 3      
+        'A' -> 0 + getOctave noter
+        | 'B' -> 2 + getOctave noter
+        | 'C' ->3 + getOctave noter
+        | 'D' -> 5 + getOctave noter
+        | 'E' -> 7 + getOctave noter
+        | 'F' -> 8
+        | 'G' -> 10
+        | _ -> printf "Not a note value!"; 0
+   
 in
 let getNoteString no offset = 
          match no with
-         Note(n) -> string_of_int offset ^ "," ^ string_of_int (getNote n) ^ "," ^ string_of_int (getVel n)
+         Note(n) -> string_of_int offset ^ "," ^ string_of_int ((getNote n) + (getMod n)) ^ "," ^ string_of_int (getVel n)
         | _ ->  ""
 in
 let printNote naw offset=
@@ -27,9 +45,15 @@ let printNote naw offset=
 in
 let printMeasure off n =
         match n with
-        Measure(m) -> List.iter (fun naw ->
-                fprintf oc "%s\n" (getNoteString naw off) 
-        )  m.body; off + 4
+        Measure(m) -> 
+                let noteOff = measLen / (List.length m.body) in
+                printf " NO: %i" noteOff;        
+                List.fold_left (fun note_num naw ->
+                        match naw with
+                        (*Note(n) -> fprintf oc "%s\n" (getNoteString naw (off+note_num)); note_num + noteOff
+                        |*) Chord(cr) -> List.iter (fun nat -> printNote nat
+                        (off+note_num)) cr; note_num + noteOff
+        )  0 m.body; off + 4
         | _ -> printf "ERROR, NOT A MEASURE!"; off
 in
 printf "start print" ;
@@ -60,7 +84,9 @@ let compile stmts =
         in
         let v = res  (run (List.rev stmts))
         in*)
-        writeOutput stmts
+        let comped = List.map fst (List.map exec stmts)
+        in
+        writeOutput 120 4 (List.rev comped) (* TODO why do we need to reverse it?*)
         (*List.iter writeOutput (List.map exec stmts)*) 
 (*
 (* Symbol table: Information about all the names in scope *)

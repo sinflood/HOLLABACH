@@ -14,7 +14,7 @@ type expr =
 
 type meas_decl = {
         id : string;
-        body :  note list;
+        body :  expr list;
 }
 type stmt =
     Block of stmt list
@@ -61,7 +61,7 @@ let rec string_of_note = function
         Note(n) -> n
 let rec string_of_expr = function
     Literal(l) -> string_of_int l
-  | Chord(c) -> String.concat "" (List.map string_of_note c)
+  | Chord(c) -> String.concat "+" (List.map string_of_note c)
   | Binop(e1, o, e2) ->
       string_of_expr e1 ^ " " ^
       (match o with
@@ -75,7 +75,7 @@ let rec string_of_expr = function
   | Noexpr -> ""
 
 let string_of_meas_decl md = 
-        md.id ^ "[" ^ String.concat "," (List.map string_of_note md.body) ^ "]"
+        md.id ^ "[" ^ String.concat "," (List.map string_of_expr md.body) ^ "]"
 let rec string_of_stmt = function
     Block(stmts) ->
       "{\n" ^ String.concat "" (List.map string_of_stmt stmts) ^ "}\n"
