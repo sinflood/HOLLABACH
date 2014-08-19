@@ -15,6 +15,7 @@ type expr =
 type meas_decl = {
         id : string;
         body :  expr list;
+        mutable measLen : int;
 }
 type stmt =
     Block of stmt list
@@ -24,7 +25,7 @@ type stmt =
   | For of expr * expr * expr * stmt
   | While of expr * stmt
   | Measure of meas_decl
-  | Loop of expr * stmt
+  | Loop of expr * stmt list
   | MeasureLen of int
   | Bpm of int
   | Id of string
@@ -91,7 +92,8 @@ let rec string_of_stmt = function
       "for (" ^ string_of_expr e1  ^ " ; " ^ string_of_expr e2 ^ " ; " ^
       string_of_expr e3  ^ ") " ^ string_of_stmt s
   | While(e, s) -> "while (" ^ string_of_expr e ^ ") " ^ string_of_stmt s
-  | Loop(e, s) -> "loop " ^ string_of_expr e ^ " { " ^ string_of_stmt s ^ " }"
+  | Loop(e, s) -> "loop " ^ string_of_expr e ^ " { " ^ String.concat "\n"
+  (List.map string_of_stmt s) ^ " }"
   | Measure(m) -> string_of_meas_decl m
 
 let string_of_vdecl id = "int " ^ id ^ ";\n"

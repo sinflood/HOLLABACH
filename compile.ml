@@ -4,7 +4,8 @@ open Printf
 module StringMap = Map.Make(String)
 let header  = "Timing Resolution (pulses per quarter note)\n4\n\nInstrument,105,Banjo\n\nTick,Note (0-127),Velocity (0-127)\n"
 
-let writeOutput bpm measLen k  = let oc = open_out_gen [Open_creat; Open_append; Open_text] 0o666 "out.bach" in 
+let writeOutput bpm k  = let oc = open_out_gen [Open_creat; Open_wronly;
+Open_trunc; Open_text] 0o666 "out.bach" in 
 let getVel notestr =
         match notestr.[ (String.length notestr) -1] with
         '1' -> 4
@@ -18,60 +19,88 @@ let getMod noter =
         | _ -> 0
 in
 let getOctave noter =
+        printf "char1: %c val: %i char2: %c val %i mod: %i " noter.[1]
+        (int_of_char noter.[1]) noter.[2] (int_of_char noter.[2]) (getMod noter);
         if getMod noter != 0 then
-                (int_of_char noter.[2] -48)* 12
+                ((int_of_char noter.[2] -48)* 12 + 12) (*octave 0 starts at 24*)
         else
-                (int_of_char noter.[1] -48)* 12
+                (int_of_char noter.[1] -48)* 12 + 12
 in
 let getNote noter =  
         match noter.[0] with
-        'A' -> 0 + getOctave noter
-        | 'B' -> 2 + getOctave noter
-        | 'C' ->3 + getOctave noter
-        | 'D' -> 5 + getOctave noter
-        | 'E' -> 7 + getOctave noter
-        | 'F' -> 8
-        | 'G' -> 10
+        'A' -> 9 + getOctave noter
+        | 'B' -> 11 + getOctave noter
+        | 'C' -> 0 + getOctave noter
+        | 'D' -> 2 + getOctave noter
+        | 'E' -> 4 + getOctave noter
+        | 'F' -> 5 + getOctave noter
+        | 'G' -> 7 + getOctave noter
         | _ -> printf "Not a note value!"; 0
    
 in
 let getNoteString no offset = 
          match no with
          Note(n) -> string_of_int offset ^ "," ^ string_of_int ((getNote n) + (getMod n)) ^ "," ^ string_of_int (getVel n)
-        | _ ->  ""
 in
 let printNote naw offset=
-        fprintf oc "%s\n" (getNoteString naw offset)
+        match naw with
+        Note(n) -> if n.[0] != 'R' then
+                fprintf oc "%s\n" (getNoteString naw offset)
 in
 let printMeasure off n =
         match n with
         Measure(m) -> 
-                let noteOff = measLen / (List.length m.body) in
-                printf " NO: %i" noteOff;        
+                printf "Len: %i off: %i mlen: %i\n" (List.length m.body) off
+                m.measLen;
+                let noteOff = (float_of_int m.measLen /. float_of_int
+                (List.length m.body)) *. 4.0 in
+                printf " NO: %f" noteOff;        
                 List.fold_left (fun note_num naw ->
                         match naw with
                         (*Note(n) -> fprintf oc "%s\n" (getNoteString naw (off+note_num)); note_num + noteOff
                         |*) Chord(cr) -> List.iter (fun nat -> printNote nat
-                        (off+note_num)) cr; note_num + noteOff
-        )  0 m.body; off + 4
+                        (off+note_num)) cr; note_num + int_of_float noteOff
+        )  0 m.body; off + (m.measLen * 4)
         | _ -> printf "ERROR, NOT A MEASURE!"; off
 in
-printf "start print" ;
+printf "start print\n" ;
 fprintf oc "%s" header;
 List.fold_left printMeasure 0 k ; 
 close_out oc
 
+
+let  vars = ref StringMap.empty
+
 let compile stmts = 
-        Printf.printf "here too\n";        
+        Printf.printf "here too\n";
         let rec eval env = match env with
-                
-                Chord(c) -> Chord(c), env
+                Literal (l) -> l
                (* | Note(n) -> Note(n), env*)
-                | a -> a , env
+                | a -> 0 
         in
-        let rec exec env = match env with
-                Measure(m) -> (Measure(m), env)
-                | a -> (a , env)
+let print_vars key measure =
+            print_string(key ^ " " ^ string_of_meas_decl measure ^ "\n")
+in
+let currMeasLen = ref 4
+in
+let currBPM = 120
+in
+        let rec exec out env = match env with
+        Measure(m) -> (vars := StringMap.add m.id m !vars); printf "var:|%s|\n"
+        m.id; printf "currML!!!: %i\n" !currMeasLen; m.measLen <- !currMeasLen; Measure(m) :: out
+                | MeasureLen(m) -> printf "!!!!!ML:%i\n" m; currMeasLen := m; out
+                | Bpm(b) -> currBPM = b; out
+                | Loop(c, b) -> let rec callLoop i body = 
+                        if i>0 then
+                        (List.fold_left exec [] body) @ (callLoop (i-1) body)
+                        else [] 
+                in (List.rev (callLoop (eval c) b)) @ out (*for l.val: list.fold_left exec l.body l.val :: out (*TODO: add
+                currMeasLen*)*)
+                | Id(i) -> printf "whole? %s" (string_of_bool (StringMap.mem
+                "whole" !vars)); StringMap.iter print_vars !vars; printf "looking
+                for: %s\n" i; Measure((StringMap.find i !vars)) :: out (* TODO lookup i *)
+                | If(c,b1,b2) -> out
+                | a -> out
                 (*| Expr(e) -> let _, env = eval env e in env*)
         in
         (*let run s = 
@@ -84,9 +113,9 @@ let compile stmts =
         in
         let v = res  (run (List.rev stmts))
         in*)
-        let comped = List.map fst (List.map exec stmts)
+        let comped = List.fold_left exec [] (List.rev stmts)
         in
-        writeOutput 120 4 (List.rev comped) (* TODO why do we need to reverse it?*)
+        writeOutput 120 (List.rev comped) (* TODO why do we need to reverse it?*)
         (*List.iter writeOutput (List.map exec stmts)*) 
 (*
 (* Symbol table: Information about all the names in scope *)

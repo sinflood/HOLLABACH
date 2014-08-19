@@ -30,9 +30,13 @@ comp:
      /*| error             { printf "error here!\n"; [] }*/ 
 mdecl:
     LBRACK note_list RBRACK
-    { printf "here5"; { id = "none";
-                body = List.rev $2; } }
-     | error             { printf "error here3!"; {id = "noine"; body=[]} } 
+    { { id = "none";
+    body = List.rev $2; measLen = 4; } }
+    | ID ASSIGN LBRACK note_list RBRACK
+    { { id = $1;
+    body = List.rev $4; measLen = 4; } }
+     | error             { printf "error here3!"; {id = "noine"; body=[];
+     measLen = 4;} } 
 
 note_list:
       /*  NOTE    { printf "here6"; [ Note($1)] }
@@ -55,7 +59,7 @@ stmt_list:
 stmt:
   | IF LPAREN expr RPAREN stmt %prec NOELSE { If($3, $5, Block([])) }
   | IF LPAREN expr RPAREN stmt ELSE stmt    { If($3, $5, $7) }
-  | LOOP LITERAL LBRACE stmt RBRACE { Loop(Literal($2), $4) }
+  | LOOP LITERAL LBRACE stmt_list RBRACE { Loop(Literal($2), $4) }
   | mdecl                       {  Measure($1) }
   | MEASURELEN ASSIGN LITERAL {MeasureLen($3)}
   | BPM ASSIGN LITERAL { Bpm($3) }
