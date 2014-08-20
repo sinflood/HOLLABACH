@@ -30,8 +30,7 @@ program:
         | program comp { $2 :: $1 }
 
 comp:
-        COMP ID LBRACE stmt_list RBRACE { Printf.printf "here2" ; {inst=$2;
-        body=$4} }
+        COMP ID LBRACE stmt_list RBRACE {{inst=$2; body=$4} }
      /*| error             { printf "error here!\n"; [] }*/ 
 mdecl:
     LBRACK note_list RBRACK
@@ -40,13 +39,14 @@ mdecl:
     | ID ASSIGN LBRACK note_list RBRACK
     { { id = $1;
     body = List.rev $4; measLen = 4; } }
-     | error             { printf "error here3!"; {id = "none"; body=[];
+     | error             { raise(Failure("Malformed measure")); {id = "none"; body=[];
      measLen = 4;} } 
 
 note_list:
-      /*  NOTE    { printf "here6"; [ Note($1)] }
-      | note_list NOTE { printf "hereNEW";Note($2) :: $1 } */
-      chord { [Chord($1)]}
+      /*  NOTE    { [ Note($1)] }
+      | note_list NOTE { Note($2) :: $1 } */
+      /*empty*/    {[]}
+      | chord { [Chord($1)]}
       | note_list chord { Chord($2) :: $1 } 
      | error             { printf "error here!5"; [] } 
 note_plus:
@@ -58,7 +58,7 @@ chord:
 
 stmt_list:
     /* nothing */  { [] }
-  | stmt_list stmt { printf "here3"; $2 :: $1 }
+  | stmt_list stmt {  $2 :: $1 }
     /* | error             { printf "error here1!"; [] }*/
 
 stmt:

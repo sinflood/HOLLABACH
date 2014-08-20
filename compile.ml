@@ -4,10 +4,12 @@ open Printf
 module StringMap = Map.Make(String)
 let header  = "Timing Resolution (pulses per quarter note)\n4\n\n"
 
+(* creates the CSV header*)
 let writeHeader fname insts = let oc= open_out_gen [Open_creat; Open_wronly; Open_append;
 Open_text] 0o666 fname in
 fprintf oc "%s%s" header insts; close_out oc
 
+(*writes out the measure contents to the CSV out file*)
 let writeOutput bpm k  fname trackNum= let oc = open_out_gen [Open_creat; Open_wronly;
 Open_append; Open_text] 0o666 fname in 
 let getVel notestr =
@@ -23,13 +25,12 @@ let getMod noter =
         | _ -> 0
 in
 let getOctave noter =
-        printf "char1: %c val: %i char2: %c val %i mod: %i " noter.[1]
-        (int_of_char noter.[1]) noter.[2] (int_of_char noter.[2]) (getMod noter);
         if getMod noter != 0 then
                 ((int_of_char noter.[2] -48)* 12 + 12) (*octave 0 starts at 24*)
         else
                 (int_of_char noter.[1] -48)* 12 + 12
 in
+(*translates the letter note to the value expected by CSV2MIDI *)
 let getNote noter =  
         match noter.[0] with
         'A' -> 9 + getOctave noter
@@ -42,6 +43,7 @@ let getNote noter =
         | _ -> raise (Failure ("Not a note value!"))
    
 in
+(*Adds empty columns for previous tracks to the row*)
 let rec getPrefix k = 
         if k = 0 then""
         else ",,,"^ getPrefix (k-1)
@@ -49,24 +51,24 @@ let rec getPrefix k =
         0 -> ""
         | _ ->",,,"*)
 in
+(* Returns the CSV line for a note*)
 let getNoteString no offset = 
          match no with
          Note(n) -> getPrefix trackNum ^ string_of_int offset ^ "," ^ string_of_int ((getNote n) +
          (getMod n)) ^ "," ^ string_of_int (getVel n)
 in
+(*prints a note to the CSV file*)
 let printNote naw offset=
         match naw with
         Note(n) -> if n.[0] != 'R' then
                 fprintf oc "%s\n" (getNoteString naw offset)
 in
+(* prints a whole measure to the CSV file*)
 let printMeasure off n =
         match n with
         Measure(m) -> 
-                printf "Len: %i off: %i mlen: %i\n" (List.length m.body) off
-                m.measLen;
                 let noteOff = (float_of_int m.measLen /. float_of_int
                 (List.length m.body)) *. 4.0 in
-                printf " NO: %f" noteOff;        
                 List.fold_left (fun note_num naw ->
                         match naw with
                         (*Note(n) -> fprintf oc "%s\n" (getNoteString naw (off+note_num)); note_num + noteOff
@@ -75,26 +77,25 @@ let printMeasure off n =
         )  0 m.body; off + (m.measLen * 4)
         | _ -> raise (Failure("ERROR, NOT A MEASURE!"))
 in
-printf "start print\n" ;
 (*fprintf oc "%s" header;*)
 List.fold_left printMeasure 0 k ; 
 close_out oc
 
-
+(*contains all of the encountered varables and values for them *)
 let  vars = ref StringMap.empty
 
 let compile stmts outfile = 
-        Printf.printf "here too\n";
         let rec eval env = match env with
                 Literal (l) -> l
                (* | Note(n) -> Note(n), env*)
                 | _ -> raise (Failure("Currently only handles literals for
                 conditionals.")) 
         in
-let print_vars key measure =
+        let print_vars key measure =
             print_string(key ^ " " ^ string_of_meas_decl measure ^ "\n")
-in
-let getInstr i =
+        in
+        (*returns the integer representation expected by CSV2Midi for an instrument*) 
+        let getInstr i =
         match i with
         "Banjo" -> "105"
         | "Clarinet" -> "71"
@@ -104,14 +105,19 @@ let getInstrumentLine tracks =
         List.fold_left (fun s c ->
                 ("Instrument,"  ^ (getInstr c.inst) ^ ",,") ^ s ) "" tracks
 in
+let rec getColumnNames inst_count =
+        if inst_count > 0 then
+                "Tick,Note(0-127),Velocity(0-127)," ^getColumnNames (inst_count -1)
+        else
+               "" 
+in
 let currMeasLen = ref 4
 in
 let currBPM = 120
 in
         let rec exec out env = match env with
-        Measure(m) -> (vars := StringMap.add m.id m !vars); printf "var:|%s|\n"
-        m.id; printf "currML!!!: %i\n" !currMeasLen; m.measLen <- !currMeasLen; Measure(m) :: out
-                | MeasureLen(m) -> printf "!!!!!ML:%i\n" m; currMeasLen := m; out
+                Measure(m) -> (vars := StringMap.add m.id m !vars);  m.measLen <- !currMeasLen; Measure(m) :: out
+                | MeasureLen(m) ->  currMeasLen := m; out
                 | Bpm(b) -> currBPM = b; out
                 | Loop(c, b) -> let rec callLoop i body = 
                         if i>0 then
@@ -119,17 +125,13 @@ in
                         else [] 
                 in (List.rev (callLoop (eval c) b)) @ out (*for l.val: list.fold_left exec l.body l.val :: out (*TODO: add
                 currMeasLen*)*)
-                | Id(i) -> printf "whole? %s" (string_of_bool (StringMap.mem
-                "whole" !vars)); StringMap.iter print_vars !vars; printf "looking
-                for: %s\n" i; Measure((StringMap.find i !vars)) :: out (* TODO lookup i *)
+                | Id(i) -> Measure((StringMap.find i !vars)) :: out (* TODO lookup i *)
                 | If(c,b1,b2) -> out
                 | a -> out
                 (*| Expr(e) -> let _, env = eval env e in env*)
         in
-        writeHeader outfile ((getInstrumentLine stmts) ^
-        "\n\nTick,Note
-        (0-127),Velocity(0-127),Tick,Note (0-127),Velocity (0-127),Tick,Note
-        (0-127),Velocity (0-127)\n");
+        writeHeader outfile ((getInstrumentLine stmts) ^ "\n\n" ^ getColumnNames
+        (List.length stmts) ^ "\n");
         List.fold_left (fun i c ->
         let comped = List.fold_left exec [] (List.rev c.body)
         in
