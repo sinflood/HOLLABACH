@@ -1,6 +1,6 @@
 #!/bin/sh
 
-MICROC="./microc"
+MICROC="./hollabach"
 
 # Set time limit for all operations
 ulimit -t 30
@@ -13,7 +13,7 @@ globalerror=0
 keep=0
 
 Usage() {
-    echo "Usage: testall.sh [options] [.mc files]"
+    echo "Usage: testall.sh [options] [.bach files]"
     echo "-k    Keep intermediate files"
     echo "-h    Print this help"
     exit 1
@@ -51,8 +51,8 @@ Run() {
 Check() {
     error=0
     basename=`echo $1 | sed 's/.*\\///
-                             s/.mc//'`
-    reffile=`echo $1 | sed 's/.mc$//'`
+                             s/.bach//'`
+    reffile=`echo $1 | sed 's/.bach$//'`
     basedir="`echo $1 | sed 's/\/[^\/]*$//'`/."
 
     echo -n "$basename..."
@@ -101,7 +101,7 @@ if [ $# -ge 1 ]
 then
     files=$@
 else
-    files="tests/fail-*.mc tests/test-*.mc"
+    files="tests/fail-*.bach tests/test-*.bach"
 fi
 
 for file in $files

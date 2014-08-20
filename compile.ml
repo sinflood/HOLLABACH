@@ -2,10 +2,14 @@ open Ast
 open Printf
 
 module StringMap = Map.Make(String)
-let header  = "Timing Resolution (pulses per quarter note)\n4\n\nInstrument,105,Banjo\n\nTick,Note (0-127),Velocity (0-127)\n"
+let header  = "Timing Resolution (pulses per quarter note)\n4\n\n"
 
-let writeOutput bpm k  = let oc = open_out_gen [Open_creat; Open_wronly;
-Open_trunc; Open_text] 0o666 "out.bach" in 
+let writeHeader fname insts = let oc= open_out_gen [Open_creat; Open_wronly; Open_append;
+Open_text] 0o666 fname in
+fprintf oc "%s%s" header insts; close_out oc
+
+let writeOutput bpm k  fname trackNum= let oc = open_out_gen [Open_creat; Open_wronly;
+Open_append; Open_text] 0o666 fname in 
 let getVel notestr =
         match notestr.[ (String.length notestr) -1] with
         '1' -> 4
@@ -35,12 +39,20 @@ let getNote noter =
         | 'E' -> 4 + getOctave noter
         | 'F' -> 5 + getOctave noter
         | 'G' -> 7 + getOctave noter
-        | _ -> printf "Not a note value!"; 0
+        | _ -> raise (Failure ("Not a note value!"))
    
+in
+let rec getPrefix k = 
+        if k = 0 then""
+        else ",,,"^ getPrefix (k-1)
+        (*match trackNum with
+        0 -> ""
+        | _ ->",,,"*)
 in
 let getNoteString no offset = 
          match no with
-         Note(n) -> string_of_int offset ^ "," ^ string_of_int ((getNote n) + (getMod n)) ^ "," ^ string_of_int (getVel n)
+         Note(n) -> getPrefix trackNum ^ string_of_int offset ^ "," ^ string_of_int ((getNote n) +
+         (getMod n)) ^ "," ^ string_of_int (getVel n)
 in
 let printNote naw offset=
         match naw with
@@ -61,25 +73,36 @@ let printMeasure off n =
                         |*) Chord(cr) -> List.iter (fun nat -> printNote nat
                         (off+note_num)) cr; note_num + int_of_float noteOff
         )  0 m.body; off + (m.measLen * 4)
-        | _ -> printf "ERROR, NOT A MEASURE!"; off
+        | _ -> raise (Failure("ERROR, NOT A MEASURE!"))
 in
 printf "start print\n" ;
-fprintf oc "%s" header;
+(*fprintf oc "%s" header;*)
 List.fold_left printMeasure 0 k ; 
 close_out oc
 
 
 let  vars = ref StringMap.empty
 
-let compile stmts = 
+let compile stmts outfile = 
         Printf.printf "here too\n";
         let rec eval env = match env with
                 Literal (l) -> l
                (* | Note(n) -> Note(n), env*)
-                | a -> 0 
+                | _ -> raise (Failure("Currently only handles literals for
+                conditionals.")) 
         in
 let print_vars key measure =
             print_string(key ^ " " ^ string_of_meas_decl measure ^ "\n")
+in
+let getInstr i =
+        match i with
+        "Banjo" -> "105"
+        | "Clarinet" -> "71"
+        | _ -> "120"
+in
+let getInstrumentLine tracks =
+        List.fold_left (fun s c ->
+                ("Instrument,"  ^ (getInstr c.inst) ^ ",,") ^ s ) "" tracks
 in
 let currMeasLen = ref 4
 in
@@ -103,19 +126,14 @@ in
                 | a -> out
                 (*| Expr(e) -> let _, env = eval env e in env*)
         in
-        (*let run s = 
-                List.map fst (List.fold_left (fun l x -> (exec x) :: l ) [] s)
-        in 
-        let res y = 
-                List.map fst y 
+        writeHeader outfile ((getInstrumentLine stmts) ^
+        "\n\nTick,Note
+        (0-127),Velocity(0-127),Tick,Note (0-127),Velocity (0-127),Tick,Note
+        (0-127),Velocity (0-127)\n");
+        List.fold_left (fun i c ->
+        let comped = List.fold_left exec [] (List.rev c.body)
         in
-        let k = run (List.rev stmts)
-        in
-        let v = res  (run (List.rev stmts))
-        in*)
-        let comped = List.fold_left exec [] (List.rev stmts)
-        in
-        writeOutput 120 (List.rev comped) (* TODO why do we need to reverse it?*)
+        writeOutput 120 (List.rev comped) outfile i; i+1 ) 0 stmts (* TODO why do we need to reverse it?*)
         (*List.iter writeOutput (List.map exec stmts)*) 
 (*
 (* Symbol table: Information about all the names in scope *)

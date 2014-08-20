@@ -37,10 +37,12 @@ type func_decl = {
     body : stmt list;
   }
 
-
-type program = string list * func_decl list
-type comp = 
-        stmt list
+type comp = {
+        inst : string;
+        body: stmt list;
+}
+(*type comp = stmt list*) 
+type program = comp list
 
 
 (*exception LexErr of string
@@ -103,10 +105,9 @@ let string_of_fdecl fdecl =
   String.concat "" (List.map string_of_vdecl fdecl.locals) ^
   String.concat "" (List.map string_of_stmt fdecl.body) ^
   "}\n"
-
-let string_of_program (vars, funcs) =
-  String.concat "" (List.map string_of_vdecl vars) ^ "\n" ^
-  String.concat "\n" (List.map string_of_fdecl funcs)
-
 let string_of_comp (stmts) = 
-        String.concat "" (List.map string_of_stmt stmts) ^ "\n"
+        String.concat "" (List.map string_of_stmt stmts.body) ^ "\n"
+
+let string_of_program comps =
+  String.concat "\n" (List.map string_of_comp comps)
+

@@ -19,14 +19,19 @@
 %left TIMES DIVIDE
 %left BPM MEASURELEN
 
-%start comp
-%type <Ast.comp> comp
+%start program
+%type <Ast.program> program
 
 %%
 
+program:
+                { [] }
+        | comp { [$1] }
+        | program comp { $2 :: $1 }
+
 comp:
-        { Printf.printf "here!" ; [] }  
-     | COMP LBRACE stmt_list RBRACE { Printf.printf "here2" ; $3 }
+        COMP ID LBRACE stmt_list RBRACE { Printf.printf "here2" ; {inst=$2;
+        body=$4} }
      /*| error             { printf "error here!\n"; [] }*/ 
 mdecl:
     LBRACK note_list RBRACK
@@ -35,14 +40,14 @@ mdecl:
     | ID ASSIGN LBRACK note_list RBRACK
     { { id = $1;
     body = List.rev $4; measLen = 4; } }
-     | error             { printf "error here3!"; {id = "noine"; body=[];
+     | error             { printf "error here3!"; {id = "none"; body=[];
      measLen = 4;} } 
 
 note_list:
       /*  NOTE    { printf "here6"; [ Note($1)] }
-      | note_list COMMA NOTE { printf "hereNEW";Note($3) :: $1 } */
+      | note_list NOTE { printf "hereNEW";Note($2) :: $1 } */
       chord { [Chord($1)]}
-      | note_list COMMA chord { Chord($3) :: $1 } 
+      | note_list chord { Chord($2) :: $1 } 
      | error             { printf "error here!5"; [] } 
 note_plus:
         NOTE { [Note($1)] }

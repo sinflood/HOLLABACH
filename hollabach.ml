@@ -12,15 +12,17 @@ let _ =
 			      ("-b", Bytecode);*)
 			      ("-c", Compile) ]
   else Compile in
+    let outfile = Sys.argv.(2) in
   let lexbuf = Lexing.from_channel stdin in
   let program = 
-          Parser.comp Scanner.token lexbuf in
+          List.rev (Parser.program Scanner.token lexbuf) in
   match action with
-    Ast -> let listing = Ast.string_of_comp program
+    Ast -> let listing = Ast.string_of_program program
            in print_string listing
   (*| Interpret -> ignore (Interpret.run program)
   | Bytecode -> let listing =
       Bytecode.string_of_prog (Compile.translate program)
     in print_endline listing*)
-  | Compile -> Compile.compile program (*Execute.execute_prog (Compile.translate program)*)
+  | Compile -> Compile.compile program outfile; ()
+  
  

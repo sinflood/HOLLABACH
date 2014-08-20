@@ -1,0 +1,21 @@
+comp something {
+loop 2 {
+[D2/4 R F2/4 R G2/4 R R D2/4]
+[ R F2/4 R A2/4 G2/4 R R R]
+[D2/4 R F2/4 R G2/4 R R F2/4]
+[ R D2/4 R R R R R R]
+}
+measureLen=2
+cool=[ G2/1 D2/1 G2/1 D2/1 G2/1 D2/1 G2/1 D2/1]
+cool
+}
+
+comp somethingelse {
+[B2/1]
+[B2/4]
+}
+
+comp somethingelser{
+[R B2/4]
+[B2/4 R]
+}
