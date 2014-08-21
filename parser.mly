@@ -40,15 +40,14 @@ mdecl:
     body = List.rev $4; measLen = 4; } }
     | LBRACK RBRACK {{ id="none"; body=[]; measLen=4;}}
     | ID ASSIGN LBRACK RBRACK {{id=$1;body=[]; measLen=4}}
-     | error             { raise(Failure("Malformed measure")); {id = "none"; body=[];
-     measLen = 4;} } 
+     | error             { raise(Failure("Malformed measure"));  }
 
 note_list:
       /*  NOTE    { [ Note($1)] }
       | note_list NOTE { Note($2) :: $1 } */
       | chord { [Chord($1)]}
       | note_list chord { Chord($2) :: $1 } 
-     | error             { printf "error here!5"; [] } 
+     | error             { raise(Failure("Malformed note")) } 
 note_plus:
         NOTE { [Note($1)] }
       /*|  NOTE PLUS NOTE { Note($3) :: [Note($1)]  }*/

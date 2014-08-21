@@ -102,7 +102,7 @@ public class CSV2MIDI{
 	        	track[i].add(new MidiEvent(sm, 0));
 		}
 
-		int channel=0,note=0,tick=0,velocity=90,column=0;
+		int channel=0,note=0,tick=0,velocity=90,column=0,length=0;
 
 		//go through each of the following lines and add notes
 		for(;currentCSVPos<csvFile.data.size();){							//loop through rest of CSV file
@@ -112,11 +112,13 @@ public class CSV2MIDI{
 				note=Integer.parseInt(csvFile.data.elementAt(currentCSVPos).toString());  //next number is note
 				currentCSVPos+=2;
 				velocity=Integer.parseInt(csvFile.data.elementAt(currentCSVPos).toString());  //next number is velocity
+				currentCSVPos+=2;
+				length=Integer.parseInt(csvFile.data.elementAt(currentCSVPos).toString());
 				currentCSVPos++;
-				channel=column/3;
+				channel=column/4;
 				column+=2;
 				track[channel].add(createNoteOnEvent(note,tick,channel,velocity));				//add note to this track
-//				track[channel].add(createNoteOffEvent(note,tick+5,channel));
+				track[channel].add(createNoteOffEvent(note,tick+length,channel));
 			}catch(NumberFormatException e){																						//current CSV position not an integer
 				if(csvFile.data.elementAt(currentCSVPos).toString().compareTo("\n")==0){  //if it's a new line
 					column=0;																																//go back to 1st column

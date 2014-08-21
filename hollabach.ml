@@ -28,6 +28,6 @@ let _ =
   | Bytecode -> let listing =
       Bytecode.string_of_prog (Compile.translate program)
     in print_endline listing*)
-  | Compile -> delIfExists outfile;Compile.compile program outfile; ()
+  | Compile -> delIfExists outfile;Compile.compile program outfile;()
   
  

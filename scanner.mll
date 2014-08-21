@@ -26,14 +26,12 @@ rule token = parse
 | "while"  { WHILE }
 | "loop"   { LOOP }
 | "comp"   { COMP }
-| "BPM"    { BPM }
-| "measureLen" { MEASURELEN }
+| "timesig" { MEASURELEN }
 | "return" { RETURN }
 | "int"    { INT }
 
-| ['R'] | (['A'-'G']['#' 'b']?['1'-'4']['/'](['1' '2' '3' '4' '8' ] | "16")) as lxm {
+| ['R'] | (['A'-'G']['#' 'b']?['0'-'6']['/'](['1' '2' '4' '8' '6' ])) as lxm {
         NOTE(lxm) }
-(*| ['A'-'G']['1'-'4']['\\'] as lxm {NOTE(lxm)}*)
 
 | ['0'-'9']+ as lxm { LITERAL(int_of_string lxm) }
 | ['a'-'z' 'A'-'Z']['a'-'z' 'A'-'Z' '0'-'9' '_']* as lxm { ID(lxm) }
