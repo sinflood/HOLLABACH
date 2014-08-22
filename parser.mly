@@ -30,7 +30,7 @@ program:
         | program inst { $2 :: $1 }
 
 inst:
-        INST ID LBRACE stmt_list RBRACE {printf "here -1";{instStr=$2; body=$4} }
+        INST ID LBRACE stmt_list RBRACE {{instStr=$2; body=(List.rev $4)} }
 
 mdecl:
     LBRACK note_list RBRACK    { { id = "none";
@@ -56,10 +56,10 @@ stmt_list:
   | stmt_list stmt {  $2 :: $1 }
 stmt:
         IF  expr LBRACE stmt_list RBRACE %prec NOELSE { If($2,
-        $4, []) }
+        (List.rev $4), []) }
   | IF  expr LBRACE stmt_list RBRACE ELSE LBRACE stmt_list RBRACE
   { If($2, (List.rev $4), (List.rev $8)) }
-  | LOOP LITERAL LBRACE stmt_list RBRACE { Loop(Literal($2), $4) }
+  | LOOP LITERAL LBRACE stmt_list RBRACE { Loop(Literal($2), (List.rev $4)) }
   | mdecl                       {  Measure($1) }
   | TIMESIG ASSIGN LITERAL { TimeSig($3)}
   | ID     { Id($1) }

@@ -155,10 +155,11 @@ in
                 Measure(m) -> (processMeasure m out)
                 | TimeSig(m) ->  currTimeSig := m; out
                 | Loop(c, b) -> let rec callLoop i body = 
-                        if i>0 then
-                            (List.fold_left (exec i) [] body) @ (callLoop (i-1) body)
+                        if i>=0 then
+                            (List.fold_left (exec i) [] body) @ (callLoop (i-1)
+                            body)
                         else [] 
-                        in (List.rev (callLoop (eval c) b)) @ out
+                        in   (callLoop ((eval c)-1) b) @ out
                 | Id(i) -> Measure((StringMap.find i !vars)) :: out
                 | If(i,b,eb) -> if (eval i) = ite then
                         (List.fold_left (exec ite) [] b) @ out 
@@ -168,6 +169,6 @@ in
         writeHeader outfile ((getInstrumentLine (List.rev stmts)) ^ "\n\n" ^ getColumnNames
         (List.length stmts) ^ "\n");
         List.fold_left (fun i c ->
-        let comped = List.fold_left (exec 0) [] (List.rev c.body)
+        let comped = List.fold_left (exec 0) [] c.body (*(List.rev c.body)*)
         in
         writeOutput (List.rev comped) outfile i; i+1 ) 0 stmts;() (* TODO why do we need to reverse it?*)

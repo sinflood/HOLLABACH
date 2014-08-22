@@ -1,7 +1,7 @@
 Timing Resolution (pulses per quarter note)
 4
 
-Instrument,105,,Instrument,71,,Instrument,0,,
+Instrument,105,Banjo,Instrument,71,Clarinet,Instrument,0,Piano,
 
 Tick,Note(0-127),Velocity(0-127),Length,Tick,Note(0-127),Velocity(0-127),Length,Tick,Note(0-127),Velocity(0-127),Length,
 0,38,80,4

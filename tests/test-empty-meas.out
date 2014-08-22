@@ -1,7 +1,7 @@
 Timing Resolution (pulses per quarter note)
 4
 
-Instrument,105,,
+Instrument,105,Banjo,
 
 Tick,Note(0-127),Velocity(0-127),Length,
 0,45,80,4

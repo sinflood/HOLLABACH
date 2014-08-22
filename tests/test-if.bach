@@ -1,0 +1,11 @@
+inst Banjo{
+  loop 4 {
+    if 3 {
+	[A3/2]
+	[B3/2]
+    }
+    else{
+	[C3/2]
+    }
+  } 
+}
