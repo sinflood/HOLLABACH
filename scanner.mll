@@ -22,13 +22,9 @@ rule token = parse
 | ">="     { GEQ }
 | "if"     { IF }
 | "else"   { ELSE }
-| "for"    { FOR }
-| "while"  { WHILE }
 | "loop"   { LOOP }
 | "inst"   { INST }
 | "timesig" { TIMESIG }
-| "return" { RETURN }
-| "int"    { INT }
 
 | ['R'] | (['A'-'G']['#' 'b']?['0'-'6']['/'](['1' '2' '4' '8' '6' ])) as lxm {
         NOTE(lxm) }

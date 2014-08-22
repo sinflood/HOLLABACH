@@ -1,10 +1,11 @@
 %{ open Ast %}
 %{ open Printf %}
 %{ open Parsing %}
+%{ open Lexing %}
 %token SEMI LBRACK RBRACK LBRACE RBRACE COMMA LPAREN RPAREN
 %token PLUS MINUS TIMES DIVIDE ASSIGN
 %token EQ NEQ LT LEQ GT GEQ
-%token RETURN IF ELSE FOR WHILE INT LOOP
+%token IF ELSE LOOP
 %token INST BPM TIMESIG
 %token <string> NOTE
 %token <int> LITERAL
@@ -17,7 +18,7 @@
 %left LT GT LEQ GEQ
 %left PLUS MINUS
 %left TIMES DIVIDE
-%left BPM TIMESIG
+%left TIMESIG
 
 %start program
 %type <Ast.program> program
@@ -29,28 +30,23 @@ program:
         | program inst { $2 :: $1 }
 
 inst:
-        INST ID LBRACE stmt_list RBRACE {{instStr=$2; body=$4} }
-     /*| error             { printf "error here!\n"; [] }*/ 
+        INST ID LBRACE stmt_list RBRACE {printf "here -1";{instStr=$2; body=$4} }
+
 mdecl:
-    LBRACK note_list RBRACK
-    { { id = "none";
-    body = List.rev $2; timesig = 4; } }
-    | ID ASSIGN LBRACK note_list RBRACK
-    { { id = $1;
-    body = List.rev $4; timesig = 4; } }
+    LBRACK note_list RBRACK    { { id = "none";
+                body = List.rev $2; timesig = 4; } }
+    | ID ASSIGN LBRACK note_list RBRACK   { { id = $1;
+                    body = List.rev $4; timesig = 4; } }
     | LBRACK RBRACK {{ id="none"; body=[]; timesig=4;}}
     | ID ASSIGN LBRACK RBRACK {{id=$1;body=[]; timesig=4}}
-     | error             { raise(Failure("Malformed measure"));  }
+    | error             { raise(Failure("Malformed measure" ) );  }
 
 note_list:
-      /*  NOTE    { [ Note($1)] }
-      | note_list NOTE { Note($2) :: $1 } */
-      | chord { [Chord($1)]}
+       chord { [Chord($1)]}
       | note_list chord { Chord($2) :: $1 } 
-     | error             { raise(Failure("Malformed note")) } 
+      | error             { raise(Failure("Malformed note")) } 
 note_plus:
         NOTE { [Note($1)] }
-      /*|  NOTE PLUS NOTE { Note($3) :: [Note($1)]  }*/
       | note_plus PLUS NOTE { Note($3) :: $1 }
 chord:
         note_plus { $1 }   
@@ -58,17 +54,15 @@ chord:
 stmt_list:
     /* nothing */  { [] }
   | stmt_list stmt {  $2 :: $1 }
-    /* | error             { printf "error here1!"; [] }*/
-
 stmt:
-  | IF LPAREN expr RPAREN stmt %prec NOELSE { If($3, $5, Block([])) }
-  | IF LPAREN expr RPAREN stmt ELSE stmt    { If($3, $5, $7) }
+        IF  expr LBRACE stmt_list RBRACE %prec NOELSE { If($2,
+        $4, []) }
+  | IF  expr LBRACE stmt_list RBRACE ELSE LBRACE stmt_list RBRACE
+  { If($2, (List.rev $4), (List.rev $8)) }
   | LOOP LITERAL LBRACE stmt_list RBRACE { Loop(Literal($2), $4) }
   | mdecl                       {  Measure($1) }
   | TIMESIG ASSIGN LITERAL { TimeSig($3)}
-  | BPM ASSIGN LITERAL { Bpm($3) }
   | ID     { Id($1) }
- /*    | error             { printf "error here2!"; Id("a") }*/ 
 
 expr:
     LITERAL          { Literal($1) }
