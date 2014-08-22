@@ -20,7 +20,7 @@ let getLen notestr =
         | '4' -> 4
         | '8' -> 2
         |  '6' -> 1 (*16th note*)
-        | _ -> raise (Failure("Invalid note length"))
+        | _ -> raise (Failure("Invalid note length on " ^ notestr))
 in
 let getMod noter = 
         match noter.[1] with
@@ -44,7 +44,7 @@ let getNote noter =
         | 'E' -> 4 + getOctave noter
         | 'F' -> 5 + getOctave noter
         | 'G' -> 7 + getOctave noter
-        | _ -> raise (Failure ("Not a note value!"))
+        | _ -> raise (Failure ("Not a note value! Note: " ^ noter))
    
 in
 (*Adds empty columns for previous tracks to the row*)
@@ -68,7 +68,7 @@ in
 let printMeasure off n =
         match n with
         Measure(m) -> 
-                let noteOff = (float_of_int m.measLen /. float_of_int
+                let noteOff = (float_of_int m.timesig /. float_of_int
                 (List.length m.body)) *. 4.0 in
                 List.fold_left (fun note_num naw ->
                         match naw with
@@ -77,8 +77,9 @@ let printMeasure off n =
                         (off+note_num)) cr; note_num + int_of_float noteOff
                         | _ -> raise(Failure("Trying to print something that
                         isn't a measure!"))
-        )  0 m.body; off + (m.measLen * 4)
-        | _ -> raise (Failure("ERROR, NOT A MEASURE!"))
+        )  0 m.body; off + (m.timesig * 4)
+        | _ -> raise (Failure("ERROR, NOT A MEASURE! value:" ^
+        string_of_stmt n))
 in
 List.fold_left printMeasure 0 k ; 
 close_out oc
@@ -98,12 +99,12 @@ let compile stmts outfile =
         match i with
         "Banjo" -> "105"
         | "Clarinet" -> "71"
-        | "Acoustic Bass" -> "32"
-        | "Alto Sax" -> "65"
-        | "Bag Pipe" -> "109"
+        | "AcousticBass" -> "32"
+        | "AltoSax" -> "65"
+        | "BagPipe" -> "109"
         | "Flute" -> "73"
         | "Piano" -> "0"
-        | "Tenor Sax" -> "66"
+        | "TenorSax" -> "66"
         | "Trombone" -> "77"
         | "Trumpet" -> "56"
         | "Violin" -> "40"
@@ -111,7 +112,7 @@ let compile stmts outfile =
 in
 let getInstrumentLine tracks =
         List.fold_left (fun s c ->
-                ("Instrument,"  ^ (getInstr c.inst) ^ ",,") ^ s ) "" tracks
+                ("Instrument,"  ^ (getInstr c.instStr) ^ ",,") ^ s ) "" tracks
 in
 let rec getColumnNames inst_count =
         if inst_count > 0 then
@@ -120,21 +121,21 @@ let rec getColumnNames inst_count =
                "" 
 in
 
-let currMeasLen = ref 4
+let currTimeSig = ref 4
 in
 let processMeasure me outp =
         let meas = Measure(me) in
         match meas with
-        Measure(m) -> if (List.mem (List.length m.body) [1; 2; 4; 8; 16; 32]) then
-                ((vars := StringMap.add m.id m !vars); m.measLen<- !currMeasLen;
+        Measure(m) -> if (List.mem (List.length m.body) [0;1; 2; 3; 4; 8; 16; 32]) then
+                ((vars := StringMap.add m.id m !vars); m.timesig<- !currTimeSig;
                 Measure(m) :: outp) else raise(Failure("Malformed measure. Incorrect number of notes/chords
-        in the measure."))
+in the measure. Count:" ^ string_of_int (List.length m.body)))
         
         |_ -> outp
 in
         let rec exec out env = match env with
         Measure(m) -> (processMeasure m out)
-                | MeasureLen(m) ->  currMeasLen := m; out
+                | TimeSig(m) ->  currTimeSig := m; out
                 | Loop(c, b) -> let rec callLoop i body = 
                         if i>0 then
                         (List.fold_left exec [] body) @ (callLoop (i-1) body)
@@ -144,7 +145,7 @@ in
                 | If(c,b1,b2) -> out
                 | a -> out
         in
-        writeHeader outfile ((getInstrumentLine stmts) ^ "\n\n" ^ getColumnNames
+        writeHeader outfile ((getInstrumentLine (List.rev stmts)) ^ "\n\n" ^ getColumnNames
         (List.length stmts) ^ "\n");
         List.fold_left (fun i c ->
         let comped = List.fold_left exec [] (List.rev c.body)

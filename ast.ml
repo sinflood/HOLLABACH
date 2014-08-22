@@ -15,34 +15,25 @@ type expr =
 type meas_decl = {
         id : string;
         body :  expr list;
-        mutable measLen : int;
+        mutable timesig : int;
 }
 type stmt =
     Block of stmt list
   | Expr of expr
-  | Return of expr
   | If of expr * stmt * stmt
-  | For of expr * expr * expr * stmt
-  | While of expr * stmt
   | Measure of meas_decl
   | Loop of expr * stmt list
-  | MeasureLen of int
+  | TimeSig of int
   | Bpm of int
   | Id of string
 
-type func_decl = {
-    fname : string;
-    formals : string list;
-    locals : string list;
-    body : stmt list;
-  }
 
-type comp = {
-        inst : string;
+type  inst = {
+        instStr : string;
         body: stmt list;
 }
 (*type comp = stmt list*) 
-type program = comp list
+type program = inst list
 
 
 (*exception LexErr of string
@@ -83,28 +74,17 @@ let rec string_of_stmt = function
     Block(stmts) ->
       "{\n" ^ String.concat "" (List.map string_of_stmt stmts) ^ "}\n"
   | Expr(expr) -> string_of_expr expr ^ ";\n";
-  | Return(expr) -> "return " ^ string_of_expr expr ^ ";\n";
   | Id(s) -> s
-  | MeasureLen(m) -> "measureLen = " ^ string_of_int m
+  | TimeSig(m) -> "timesig = " ^ string_of_int m
   | Bpm(b) -> "BPM = " ^ string_of_int b
   | If(e, s, Block([])) -> "if (" ^ string_of_expr e ^ ")\n" ^ string_of_stmt s
   | If(e, s1, s2) ->  "if (" ^ string_of_expr e ^ ")\n" ^
       string_of_stmt s1 ^ "else\n" ^ string_of_stmt s2
-  | For(e1, e2, e3, s) ->
-      "for (" ^ string_of_expr e1  ^ " ; " ^ string_of_expr e2 ^ " ; " ^
-      string_of_expr e3  ^ ") " ^ string_of_stmt s
-  | While(e, s) -> "while (" ^ string_of_expr e ^ ") " ^ string_of_stmt s
   | Loop(e, s) -> "loop " ^ string_of_expr e ^ " { " ^ String.concat "\n"
   (List.map string_of_stmt s) ^ " }"
   | Measure(m) -> string_of_meas_decl m
 
-let string_of_vdecl id = "int " ^ id ^ ";\n"
 
-let string_of_fdecl fdecl =
-  fdecl.fname ^ "(" ^ String.concat ", " fdecl.formals ^ ")\n{\n" ^
-  String.concat "" (List.map string_of_vdecl fdecl.locals) ^
-  String.concat "" (List.map string_of_stmt fdecl.body) ^
-  "}\n"
 let string_of_comp (stmts) = 
         String.concat "" (List.map string_of_stmt stmts.body) ^ "\n"
 

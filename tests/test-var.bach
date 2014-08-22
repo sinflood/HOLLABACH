@@ -1,4 +1,4 @@
-comp Piano {
+inst Piano {
 varname = [C3/2]
 varname
 }

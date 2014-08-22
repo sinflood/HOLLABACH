@@ -1,8 +1,7 @@
 Timing Resolution (pulses per quarter note)
 4
 
-Instrument,0,,
+Instrument,66,,
 
 Tick,Note(0-127),Velocity(0-127),Length,
-0,48,80,4
-8,48,80,4
+0,48,80,8

@@ -1,0 +1,29 @@
+inst Piano{
+    timesig=3
+    loop 2{
+	    [G3/4+F3/4 G3/4+F3/4 G3/4+F3/4]
+    }
+    loop 2{
+        [G3/4+E3/4 G3/4+E3/4 G3/4+E3/4]
+    }
+
+    [B3/4+D3/4 B3/4+D3/4 B3/4+D3/4]
+    [B3/4+D3/4 A3/4+E3/4 B3/4+D3/4]
+
+    [C3/4+C4/4 R C3/4+C4/4]
+    [C3/2+C4/2 R]
+}
+
+inst AcousticBass{
+    timesig=3
+    beg = [C3/8 G3/4+F3/4 G3/4+F3/4]
+    beg
+    loop 2{
+	[C3/8 G3/4+E3/4 G3/4+F3/4]
+    }
+    [D3/8 G3/4+F3/4 G3/4+F3/4]
+    [D3/8 G3/4+E3/4 G3/4+E3/4]
+
+    beg
+    [C3/2 R]
+}

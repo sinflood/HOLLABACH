@@ -5,7 +5,7 @@
 %token PLUS MINUS TIMES DIVIDE ASSIGN
 %token EQ NEQ LT LEQ GT GEQ
 %token RETURN IF ELSE FOR WHILE INT LOOP
-%token COMP BPM MEASURELEN
+%token INST BPM TIMESIG
 %token <string> NOTE
 %token <int> LITERAL
 %token <string> ID
@@ -17,7 +17,7 @@
 %left LT GT LEQ GEQ
 %left PLUS MINUS
 %left TIMES DIVIDE
-%left BPM MEASURELEN
+%left BPM TIMESIG
 
 %start program
 %type <Ast.program> program
@@ -25,21 +25,21 @@
 %%
 
 program:
-        | comp { [$1] }
-        | program comp { $2 :: $1 }
+        | inst { [$1] }
+        | program inst { $2 :: $1 }
 
-comp:
-        COMP ID LBRACE stmt_list RBRACE {{inst=$2; body=$4} }
+inst:
+        INST ID LBRACE stmt_list RBRACE {{instStr=$2; body=$4} }
      /*| error             { printf "error here!\n"; [] }*/ 
 mdecl:
     LBRACK note_list RBRACK
     { { id = "none";
-    body = List.rev $2; measLen = 4; } }
+    body = List.rev $2; timesig = 4; } }
     | ID ASSIGN LBRACK note_list RBRACK
     { { id = $1;
-    body = List.rev $4; measLen = 4; } }
-    | LBRACK RBRACK {{ id="none"; body=[]; measLen=4;}}
-    | ID ASSIGN LBRACK RBRACK {{id=$1;body=[]; measLen=4}}
+    body = List.rev $4; timesig = 4; } }
+    | LBRACK RBRACK {{ id="none"; body=[]; timesig=4;}}
+    | ID ASSIGN LBRACK RBRACK {{id=$1;body=[]; timesig=4}}
      | error             { raise(Failure("Malformed measure"));  }
 
 note_list:
@@ -65,7 +65,7 @@ stmt:
   | IF LPAREN expr RPAREN stmt ELSE stmt    { If($3, $5, $7) }
   | LOOP LITERAL LBRACE stmt_list RBRACE { Loop(Literal($2), $4) }
   | mdecl                       {  Measure($1) }
-  | MEASURELEN ASSIGN LITERAL {MeasureLen($3)}
+  | TIMESIG ASSIGN LITERAL { TimeSig($3)}
   | BPM ASSIGN LITERAL { Bpm($3) }
   | ID     { Id($1) }
  /*    | error             { printf "error here2!"; Id("a") }*/ 

@@ -1,5 +1,8 @@
 inst Banjo{
 loop 4{
 [C3/2]
+loop 2{
+[A3/2]
+}
 }
 }

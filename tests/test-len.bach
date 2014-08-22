@@ -1,4 +1,4 @@
-comp Banjo{
+inst Banjo{
 timesig=2
 [C3/2 A3/2]
 }

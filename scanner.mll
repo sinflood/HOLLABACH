@@ -25,8 +25,8 @@ rule token = parse
 | "for"    { FOR }
 | "while"  { WHILE }
 | "loop"   { LOOP }
-| "comp"   { COMP }
-| "timesig" { MEASURELEN }
+| "inst"   { INST }
+| "timesig" { TIMESIG }
 | "return" { RETURN }
 | "int"    { INT }
 
